@@ -1,5 +1,6 @@
 var Application = require('spectron').Application;
 var should = require('chai').should();
+spawn = require('child_process').spawn;
 
 describe('application launch', function () {
   var runtimeVersion = '6.49.11.73';  // need to match the version of Runtime being tested
@@ -8,15 +9,18 @@ describe('application launch', function () {
   this.timeout(10000);
 
   before(function () {
-    var openfinInstallDir = process.env['LOCALAPPDATA'] + '\\openfin';  // default install directory for OpenFin.
+    if (process.platform === 'win32') {
+      var args = ['/c', 'openfin-installer.exe', '--config=https://demoappdirectory.openf.in/desktop/config/apps/OpenFin/HelloOpenFin/app.json'];
+      spawn('cmd.exe', args);
+    } else {
+      spawn(config.desiredCapabilities.chromeOptions.binary, config.desiredCapabilities.chromeOptions.args);
+    }
     app = new Application({
-      path: openfinInstallDir + '\\runtime\\' + runtimeVersion + '\\OpenFin\\openfin.exe',
-      args: ['--startup-url=https://demoappdirectory.openf.in/desktop/config/apps/OpenFin/HelloOpenFin/app.json'],
-      cwd: openfinInstallDir,
       connectionRetryCount: 1,
       connectionRetryTimeout: 10000,
       startTimeout: 10000,
-      waitTimeout: 10000
+      waitTimeout: 10000,
+      debuggerAddress: 'localhost:9090'
     });
 
     return app.start().then(function () {
@@ -33,6 +37,13 @@ describe('application launch', function () {
 
   after(function () {
     if (app && app.isRunning()) {
+
+      app.client.getMainProcessLogs().then(function (logs) {
+        logs.forEach(function (log) {
+          console.log(log)
+        })
+      });
+
       return app.stop();
     }
   });
@@ -137,7 +148,9 @@ describe('application launch', function () {
    * @param resultCallback callback with result of the javascript code
    */
   function executeJavascript(script, resultCallback) {
-    client.execute(script, resultCallback);
+    client.execute(script).then(function() { resultCallback(); }, function (err) {
+      resultCallback(err);
+    });
   }
 
   it('Switch to Hello OpenFin Main window', function(done) {
@@ -162,7 +175,10 @@ describe('application launch', function () {
     client.element("#desktop-notification").then(function(result) {
       should.exist(result.value);
       notificationButton = result.value;
-      done();
+      // pause here for notification service to be ready
+      client.pause(3000).then(function() {
+        done();
+      });
     });
   });
 

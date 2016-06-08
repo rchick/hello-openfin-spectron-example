@@ -17,6 +17,6 @@
     "load-grunt-tasks": "^1.0.0"
   },
   "devDependencies": {
-    "spectron": "^3.1.0"
+    "spectron": "^3.2.3"
   }
 }
