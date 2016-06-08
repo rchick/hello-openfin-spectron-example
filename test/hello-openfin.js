@@ -5,8 +5,9 @@ spawn = require('child_process').spawn;
 describe('application launch', function () {
   var runtimeVersion = '6.49.11.73';  // need to match the version of Runtime being tested
   var app, client,notificationButton, cpuInfoButton, cpuInfoExitButton;
+  var timeout = 60000;
 
-  this.timeout(10000);
+  this.timeout(timeout);
 
   before(function () {
     if (process.platform === 'win32') {
@@ -17,18 +18,18 @@ describe('application launch', function () {
     }
     app = new Application({
       connectionRetryCount: 1,
-      connectionRetryTimeout: 10000,
-      startTimeout: 10000,
-      waitTimeout: 10000,
+      connectionRetryTimeout: timeout,
+      startTimeout: timeout,
+      waitTimeout: timeout,
       debuggerAddress: 'localhost:9090'
     });
 
     return app.start().then(function () {
       app.isRunning().should.equal(true);
       client = app.client;
-      client.timeoutsImplicitWait(5000);
-      client.timeoutsAsyncScript(5000);
-      client.timeouts("page load", 5000);
+      client.timeoutsImplicitWait(timeout);
+      client.timeoutsAsyncScript(timeout);
+      client.timeouts("page load", timeout);
     }, function (err) {
         console.error(err);
     })
@@ -37,13 +38,6 @@ describe('application launch', function () {
 
   after(function () {
     if (app && app.isRunning()) {
-
-      app.client.getMainProcessLogs().then(function (logs) {
-        logs.forEach(function (log) {
-          console.log(log)
-        })
-      });
-
       return app.stop();
     }
   });
@@ -69,7 +63,6 @@ describe('application launch', function () {
    */
   function switchWindowByTitle(windowTitle, done) {
     client.getTabIds().then(function (handles) {
-      console.log("got tabs");
       var handleIndex = 0;
       var checkTitle = function (title) {
         if (title === windowTitle) {
@@ -228,5 +221,12 @@ describe('application launch', function () {
     })
   });
 
+  it('Exit OpenFin Runtime', function (done) {
+    should.exist(client);
+    // need to put a short delay here so execute request gets proper return to ChromeDriver
+    executeJavascript("setTimeout(function() { fin.desktop.System.exit(); }, 2000);", function () {
+      done();
+    });
+  });
 
 });
