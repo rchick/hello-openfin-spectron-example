@@ -50,7 +50,6 @@ describe('application launch', function () {
   function switchWindow(windowHandle, callback) {
     client.switchTab(windowHandle).then(function() {
       client.title().then(function (result) {
-        console.log(windowHandle, result);
           callback(result.value);
       });
     });
