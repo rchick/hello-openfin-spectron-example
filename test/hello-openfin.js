@@ -53,12 +53,6 @@ describe("application launch", function() {
     );
   });
 
-  // after(function() {
-  //   if (app && app.isRunning()) {
-  //     return app.stop();
-  //   }
-  // });
-
   /**
    * Select a Window
    * @param windowHandle handle of the window
@@ -174,23 +168,6 @@ describe("application launch", function() {
   it("Switch to Hello OpenFin Main window", function(done) {
     switchWindowByTitle("Hello OpenFin", done);
   });
-
-  // it("Wait for OpenFin Java adapter ready", function(done) {
-  //   waitForFinDesktop(done);
-  // });
-
-  // it("Verify OpenFin Runtime Version", function(done) {
-  //   executeAsyncJavascript(
-  //     "var callback = arguments[arguments.length - 1];" +
-  //       "fin.desktop.System.getVersion(function(v) { callback(v); } );",
-  //     function(err, result) {
-  //       should.not.exist(err);
-  //       should.exist(result.value);
-  //       //        result.value.should.equal(runtimeVersion);
-  //       done();
-  //     }
-  //   );
-  // });
 
   it("Find notification button", function(done) {
     client.element("#desktop-notification").then(function(result) {
