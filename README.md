@@ -1,4 +1,4 @@
-# Hello OpenFin Spectron Example
+# Hello OpenFin Spectron Example (Forking to add Mac/Linux support)
 
 ## Overview
 Included in this repository are simple example tests for the 'Hello OpenFin' app using the [Electron Spectron](https://github.com/electron/spectron). 
