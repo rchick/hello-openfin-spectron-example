@@ -22,7 +22,14 @@ The following steps will help you run tests:
  ```bash
  mocha test/hello-openfin.js
  ```
-
+#### or on Mac or Linux use:
+ ```bash
+ npm mocha
+ ```
+or
+ ```bash
+ yarn mocha
+ ```
 ## Disclaimers
 * This is a starter example and intended to demonstrate to app providers a sample of how to approach an implementation. There are potentially other ways to approach it and alternatives could be considered. 
 * This is an open source project and all are encouraged to contribute.
