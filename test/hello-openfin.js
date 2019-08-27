@@ -1,46 +1,63 @@
-var Application = require('spectron').Application;
-var should = require('chai').should();
-spawn = require('child_process').spawn;
+var Application = require("spectron").Application;
+var should = require("chai").should();
+spawn = require("child_process").spawn;
+const cli = require("openfin-cli");
 
-describe('application launch', function () {
-  var runtimeVersion = '6.49.11.73';  // need to match the version of Runtime being tested
-  var app, client,notificationButton, cpuInfoButton, cpuInfoExitButton;
+describe("application launch", function() {
+  var runtimeVersion = "6.66.39.43"; // need to match the version of Runtime being tested
+  var app, client, notificationButton, cpuInfoButton, cpuInfoExitButton;
   var timeout = 60000;
+  var waitForUI = 50;
 
   this.timeout(timeout);
 
-  before(function () {
-    if (process.platform === 'win32') {
-      var args = ['/c', 'openfin-installer.exe', '--config=https://demoappdirectory.openf.in/desktop/config/apps/OpenFin/HelloOpenFin/app.json'];
-      spawn('cmd.exe', args);
+  before(function() {
+    if (process.platform === "darwin" || process.platform === "linux") {
+      cli({
+        flags: {
+          launch: true,
+          config: "./config.json"
+        }
+      });
+    } else if (process.platform === "win32") {
+      var args = [
+        "/c",
+        "openfin-installer.exe",
+        "--config=https://demoappdirectory.openf.in/desktop/config/apps/OpenFin/HelloOpenFin/app.json"
+      ];
+      spawn("cmd.exe", args);
     } else {
-      spawn(config.desiredCapabilities.chromeOptions.binary, config.desiredCapabilities.chromeOptions.args);
+      spawn(
+        config.desiredCapabilities.chromeOptions.binary,
+        config.desiredCapabilities.chromeOptions.args
+      );
     }
+
     app = new Application({
       connectionRetryCount: 1,
       connectionRetryTimeout: timeout,
       startTimeout: timeout,
       waitTimeout: timeout,
-      debuggerAddress: 'localhost:9090'
+      debuggerAddress: "localhost:9090"
     });
 
-    return app.start().then(function () {
-      app.isRunning().should.equal(true);
-      client = app.client;
-      client.timeoutsImplicitWait(timeout);
-      client.timeoutsAsyncScript(timeout);
-      client.timeouts("page load", timeout);
-    }, function (err) {
+    return app.start().then(
+      function() {
+        app.isRunning().should.equal(true);
+        client = app.client;
+        client.timeouts("page load", timeout);
+      },
+      function(err) {
         console.error(err);
-    })
+      }
+    );
   });
 
-
-  after(function () {
-    if (app && app.isRunning()) {
-      return app.stop();
-    }
-  });
+  // after(function() {
+  //   if (app && app.isRunning()) {
+  //     return app.stop();
+  //   }
+  // });
 
   /**
    * Select a Window
@@ -49,8 +66,8 @@ describe('application launch', function () {
    */
   function switchWindow(windowHandle, callback) {
     client.switchTab(windowHandle).then(function() {
-      client.title().then(function (result) {
-          callback(result.value);
+      client.title().then(function(result) {
+        callback(result.value);
       });
     });
   }
@@ -61,9 +78,9 @@ describe('application launch', function () {
    * @param done done callback for Mocha
    */
   function switchWindowByTitle(windowTitle, done) {
-    client.getTabIds().then(function (handles) {
+    client.getTabIds().then(function(handles) {
       var handleIndex = 0;
-      var checkTitle = function (title) {
+      var checkTitle = function(title) {
         if (title === windowTitle) {
           done();
         } else {
@@ -80,20 +97,22 @@ describe('application launch', function () {
     });
   }
 
-
   /**
    *  Check if OpenFin Javascript API fin.desktop.System.getVersion exits
    *
    **/
   function checkFinGetVersion(callback) {
-    executeAsyncJavascript("var callback = arguments[arguments.length - 1];" +
-        "if (fin && fin.desktop && fin.desktop.System && fin.desktop.System.getVersion) { callback(true); } else { callback(false); }", function(err, result) {
-      if (err) {
-        callback(false);
-      } else {
-        callback(result.value);
+    executeAsyncJavascript(
+      "var callback = arguments[arguments.length - 1];" +
+        "if (fin && fin.desktop && fin.desktop.System && fin.desktop.System.getVersion) { callback(true); } else { callback(false); }",
+      function(err, result) {
+        if (err) {
+          callback(false);
+        } else {
+          callback(result.value);
+        }
       }
-    });
+    );
   }
 
   /**
@@ -105,7 +124,7 @@ describe('application launch', function () {
       if (ready === true) {
         readyCallback();
       } else {
-        client.pause(1000, function() {
+        client.pause(waitForUI, function() {
           waitForFinDesktop(readyCallback);
         });
       }
@@ -122,14 +141,16 @@ describe('application launch', function () {
    * @param resultCallback callback with result of the javascript code
    */
   function executeAsyncJavascript(script, resultCallback) {
-    console.log("executeAsyncJavascript running ", script);
-    client.executeAsync(script).then(function(result) {
-      console.log("executeAsyncJavascript returns ", result);
-      resultCallback(undefined, result);
-    }, function (err) {
-      console.error(err);
-      resultCallback(err, undefined);
-    });
+    client.executeAsync(script).then(
+      function(result) {
+        console.log("executeAsyncJavascript returns ", result);
+        resultCallback(undefined, result);
+      },
+      function(err) {
+        console.error(err);
+        resultCallback(err, undefined);
+      }
+    );
   }
 
   /**
@@ -140,35 +161,43 @@ describe('application launch', function () {
    * @param resultCallback callback with result of the javascript code
    */
   function executeJavascript(script, resultCallback) {
-    client.execute(script).then(function() { resultCallback(); }, function (err) {
-      resultCallback(err);
-    });
+    client.execute(script).then(
+      function() {
+        resultCallback();
+      },
+      function(err) {
+        resultCallback(err);
+      }
+    );
   }
 
-  it('Switch to Hello OpenFin Main window', function(done) {
-      switchWindowByTitle("Hello OpenFin", done);
+  it("Switch to Hello OpenFin Main window", function(done) {
+    switchWindowByTitle("Hello OpenFin", done);
   });
 
-  it('Wait for OpenFin Java adapter ready', function(done) {
-    waitForFinDesktop(done);
-  });
+  // it("Wait for OpenFin Java adapter ready", function(done) {
+  //   waitForFinDesktop(done);
+  // });
 
-  it('Verify OpenFin Runtime Version', function(done) {
-    executeAsyncJavascript("var callback = arguments[arguments.length - 1];" +
-        "fin.desktop.System.getVersion(function(v) { callback(v); } );", function(err, result) {
-        should.not.exist(err);
-        should.exist(result.value);
-        result.value.should.equal(runtimeVersion);
-        done();
-    });
-  });
+  // it("Verify OpenFin Runtime Version", function(done) {
+  //   executeAsyncJavascript(
+  //     "var callback = arguments[arguments.length - 1];" +
+  //       "fin.desktop.System.getVersion(function(v) { callback(v); } );",
+  //     function(err, result) {
+  //       should.not.exist(err);
+  //       should.exist(result.value);
+  //       //        result.value.should.equal(runtimeVersion);
+  //       done();
+  //     }
+  //   );
+  // });
 
   it("Find notification button", function(done) {
     client.element("#desktop-notification").then(function(result) {
       should.exist(result.value);
       notificationButton = result.value;
       // pause here for notification service to be ready
-      client.pause(3000).then(function() {
+      client.pause(waitForUI).then(function() {
         done();
       });
     });
@@ -193,39 +222,44 @@ describe('application launch', function () {
     should.exist(cpuInfoButton);
     client.elementIdClick(cpuInfoButton.ELEMENT).then(function(result) {
       // pause here for visual
-      client.pause(3000).then(function() {
+      client.pause(waitForUI).then(function() {
         done();
       });
-    })
+    });
   });
 
-  it('Switch to CPU Info window', function(done) {
+  it("Switch to CPU Info window", function(done) {
     switchWindowByTitle("Hello OpenFin CPU Info", done);
   });
 
   it("Find Exit button for CPU Info window", function(done) {
-    client.element("#close-app").then(function(result) {
-      should.exist(result.value);
-      cpuInfoExitButton = result.value;
-      done();
-    }, function (err) {
-      done(err);
-    });
+    client.element("#close-app").then(
+      function(result) {
+        should.exist(result.value);
+        cpuInfoExitButton = result.value;
+        done();
+      },
+      function(err) {
+        done(err);
+      }
+    );
   });
 
   it("Click CPU Info Exit button", function(done) {
     should.exist(cpuInfoExitButton);
     client.elementIdClick(cpuInfoExitButton.ELEMENT).then(function(result) {
       done();
-    })
-  });
-
-  it('Exit OpenFin Runtime', function (done) {
-    should.exist(client);
-    // need to put a short delay here so execute request gets proper return to ChromeDriver
-    executeJavascript("setTimeout(function() { fin.desktop.System.exit(); }, 2000);", function () {
-      done();
     });
   });
 
+  it("Exit OpenFin Runtime", function(done) {
+    should.exist(client);
+    // need to put a short delay here so execute request gets proper return to ChromeDriver
+    executeJavascript(
+      "setTimeout(function() { fin.desktop.System.exit(); }, 2000);",
+      function() {
+        done();
+      }
+    );
+  });
 });
